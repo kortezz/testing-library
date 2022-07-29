@@ -1,7 +1,8 @@
 import React from 'react';
 import {rest} from 'msw';
 import {setupServer} from 'msw/node'
-import {fireEvent, render, screen} from '@testing-library/react';
+import {render, screen} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/extend-expect';
 import '@testing-library/jest-dom';
 import Counter from "./Counter";
@@ -9,16 +10,20 @@ import axios, { AxiosResponse } from 'axios';
 import { act } from 'react-dom/test-utils';
 import { waitFor } from '@testing-library/react';
 
-    const server = setupServer(
-        rest.get('https://randomuser.me/api?nat=tr&inc=name', (req, res, ctx) => {
-            let mockedData = {"results":[{"name":{"title":"Miss","first":"Kübra","last":"Süleymanoğlu"}}],"info":{"seed":"a279f85094a753b4","results":1,"page":1,"version":"1.4"}};
-            return res(ctx.json({mockedData}));
-        }),
-    )
-
-    beforeAll(() => server.listen())
-    afterEach(() => server.resetHandlers())
-    afterAll(() => server.close())
+    // Mock jest and set the type
+    jest.mock('axios');
+    const mockedAxios = axios as jest.Mocked<typeof axios>;
+    const mockedResult = { data: {
+        "results": [
+        {
+            "name": {
+            "title": "Mr",
+            "first": "Peter",
+            "last":  "Parker"
+            }
+        },
+        ]}
+    };
 
     describe('Counter', () => {
 
@@ -53,9 +58,10 @@ import { waitFor } from '@testing-library/react';
     });
 
     test('shows green color when + button is clicked then count value will be 1', () => {
+        mockedAxios.get.mockResolvedValue(mockedResult);
         render(<Counter />);
 
-        fireEvent.click(screen.getByText("+"));
+        userEvent.click(screen.getByText("+"));
 
         expect(screen.getByRole("count")).toHaveClass("green");
         expect(screen.getByRole("count")).toHaveTextContent("1");
@@ -64,26 +70,29 @@ import { waitFor } from '@testing-library/react';
     test('shows red color when - button is clicked then count value will be -1', () => {
         render(<Counter />);
 
-        fireEvent.click(screen.getByText("-"));
+        userEvent.click(screen.getByText("-"));
 
         expect(screen.getByRole("count")).toHaveClass("red");
         expect(screen.getByRole("count")).toHaveTextContent("-1");
     });
 
-    
     test('shows 1 person when + button is clicked once', async () => {
-        server.use(
-            rest.get('https://randomuser.me/api?nat=tr&inc=name', (req, res, ctx) => {
-                let mockedData = {"results":[{"name":{"title":"Miss","first":"Ayse","last":"Süleymanoğlu"}}],"info":{"seed":"a279f85094a753b4","results":1,"page":1,"version":"1.4"}};
-                return res(ctx.json({mockedData}));
-            }),
-          )
+        mockedAxios.get.mockResolvedValue(mockedResult);
+        render(<Counter />)
 
-        render(<Counter />);
-        fireEvent.click(screen.getByText("+"));
-        await waitFor(() =>{
-            expect(screen.getAllByRole("names")).toHaveLength(1);
-        }) 
+        userEvent.click(screen.getByText("+"));
+
+        expect(await screen.findAllByRole("names")).toHaveLength(1);
+    });
+
+    test('shows 2 person when + button is clicked twice', async () => {
+        mockedAxios.get.mockResolvedValue(mockedResult);
+        render(<Counter />)
+
+        userEvent.click(screen.getByText("+"));
+        userEvent.click(screen.getByText("+"));
+        
+        expect(await screen.findAllByRole("names")).toHaveLength(2);
     });
     
 })
