@@ -7,7 +7,7 @@ const Counter = () => {
     const [count, setCount] = useState(0);
     const [people, setPeople] = useState<string[]>([]);
 
-    function AddNewRandomPerson(){                
+    function addNewRandomPerson(){                
         axios.get('https://randomuser.me/api?nat=tr&inc=name').then(res =>{
             let person = res.data.results[0].name.first + " " + res.data.results[0].name.last;
             console.log('Adding new person:' + person);
@@ -15,7 +15,7 @@ const Counter = () => {
         })
     }
 
-    function RemoveLastPerson(){
+    function removeLastPerson(){
         setPeople(people.slice(0, -1));
     }
 
@@ -24,7 +24,7 @@ const Counter = () => {
             <h1 data-testid="header">Counter</h1>
             <button onClick={() => {
                 setCount((prevState) => prevState-1)
-                RemoveLastPerson();
+                removeLastPerson();
             }}>-</button>
             <span
                 style={{padding: 10, fontSize: 25}}
@@ -36,7 +36,7 @@ const Counter = () => {
             <button onClick={() => {
                 setCount((prevState) => prevState+1)
                 if(count>=0){
-                    AddNewRandomPerson();
+                    addNewRandomPerson();
                 }
             }}>+</button>
 
